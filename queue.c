@@ -67,25 +67,7 @@ bool q_insert_tail(struct list_head *head, char *s)
 {
     if (!head || !s)
         return false;
-
-    element_t *new = malloc(sizeof(element_t));
-    if (!new)
-        return false;
-
-    // Calculate the size of the string (don't forget the null byte)
-    int str_size = strlen(s);
-    new->value = malloc(str_size + 1);
-    if (!new->value) {
-        free(new);
-        return false;
-    }
-
-    strncpy(new->value, s, str_size);
-    *(new->value + str_size) = '\0';
-
-    list_add_tail(&new->list, head);
-
-    return true;
+    return q_insert_head(head->prev, s);
 }
 
 /* Remove an element from head of queue */
@@ -108,14 +90,7 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
     if (!head || list_empty(head))
         return NULL;
-    element_t *node = list_last_entry(head, element_t, list);
-    list_del(&node->list);
-
-    if (bufsize) {
-        strncpy(sp, node->value, bufsize - 1);
-        *(sp + bufsize - 1) = '\0';
-    }
-    return node;
+    return q_remove_head(head->prev->prev, sp, bufsize);
 }
 
 /* Return number of elements in queue */
@@ -214,7 +189,20 @@ void q_reverseK(struct list_head *head, int k)
 }
 
 /* Sort elements of queue in ascending order */
-void q_sort(struct list_head *head) {}
+void q_sort(struct list_head *head)
+{
+    // merge sort
+    if (!head || list_empty(head))
+        return;
+    /*struct list_head *first_half = head, *second_half = NULL,
+                     *front = head->next, *back = head->prev;
+    while (front != back && front->next != back) {
+        front = front->next;
+        back = back->prev;
+    }
+    second_half = back;
+    */
+}
 
 /* Remove every node which has a node with a strictly greater value anywhere to
  * the right side of it */
