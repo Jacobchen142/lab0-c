@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -206,20 +207,65 @@ void q_reverseK(struct list_head *head, int k)
     }
 }
 
+void restructure_list(struct list_head *head)
+{
+    struct list_head *curr = head, *next = curr->next;
+    while (next) {
+        next->prev = curr;
+        curr = next;
+        next = next->next;
+    }
+    curr->next = head;
+    head->prev = curr;
+}
+
+/*Merge two sorted list in asceding order*/
+static struct list_head *mergelist(struct list_head *list1,
+                                   struct list_head *list2)
+{
+    struct list_head *res = NULL;
+    struct list_head **indirect = &res;
+    for (struct list_head **node = NULL; list1 && list2;
+         *node = (*node)->next) {
+        element_t *list1_entry = list_entry(list1, element_t, list);
+        element_t *list2_entry = list_entry(list2, element_t, list);
+        node = strcmp(list1_entry->value, list2_entry->value) < 0 ? &list1
+                                                                  : &list2;
+        *indirect = *node;
+        indirect = &(*indirect)->next;
+    }
+    *indirect = (struct list_head *) ((size_t) list1 | (size_t) list2);
+    return res;
+}
+
+static struct list_head *mergesort(struct list_head *head)
+{
+    if (!head || !head->next)
+        return head;
+
+    struct list_head *fast = head, *slow = head;
+    while (fast && fast->next) {
+        fast = fast->next->next;
+        slow = slow->next;
+    }
+
+    struct list_head *mid = slow;
+    slow->prev->next = NULL;
+
+    struct list_head *left = mergesort(head);
+    struct list_head *right = mergesort(mid);
+    return mergelist(left, right);
+}
 /* Sort elements of queue in ascending order */
 void q_sort(struct list_head *head)
 {
-    // merge sort
-    if (!head || list_empty(head))
+    if (q_size(head) <= 1)
         return;
-    /*struct list_head *first_half = head, *second_half = NULL,
-                     *front = head->next, *back = head->prev;
-    while (front != back && front->next != back) {
-        front = front->next;
-        back = back->prev;
-    }
-    second_half = back;
-    */
+    // change circular doubly-linked list to singular linked list
+    head->prev->next = NULL;
+    head->next = mergesort(head->next);
+    /* restructure the doubly-linked list */
+    restructure_list(head);
 }
 
 /* Remove every node which has a node with a strictly greater value anywhere to
