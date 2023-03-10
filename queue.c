@@ -271,12 +271,19 @@ int q_descend(struct list_head *head)
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
     if (!head || list_empty(head))
         return 0;
-    element_t *entry, *next;
-    list_for_each_entry_safe (entry, next, head, list) {
-        if (&next->list != head && strcmp(entry->value, next->value) < 0) {
-            list_del(&entry->list);
-            q_release_element(entry);
-        }
+    // traverse linked list in the direction of prev
+    struct list_head *curr = head->prev, *next = curr->prev;
+    while (next != head) {
+        element_t *curr_entry = list_entry(curr, element_t, list);
+        element_t *next_entry = list_entry(next, element_t, list);
+        bool less = strcmp(curr_entry->value, next_entry->value) > 0;
+
+        if (less) {
+            list_del(next);
+            q_release_element(next_entry);
+        } else
+            curr = next;
+        next = curr->prev;
     }
     return q_size(head);
 }
