@@ -29,12 +29,10 @@ void q_free(struct list_head *l)
     if (!l)
         return;
 
-    struct list_head *node = l->next;
-    while (node != l) {
-        struct list_head *del = node;
-        node = node->next;
-        list_del(del);
-        q_release_element(list_entry(del, element_t, list));
+    struct list_head *curr, *next;
+    list_for_each_safe (curr, next, l) {
+        list_del(curr);
+        q_release_element(list_entry(curr, element_t, list));
     }
     free(l);
 }
@@ -257,7 +255,7 @@ void q_sort(struct list_head *head)
 {
     if (q_size(head) <= 1)
         return;
-    // change circular doubly-linked list to singular linked list
+    /* change circular doubly-linked list to singular linked list */
     head->prev->next = NULL;
     head->next = mergesort(head->next);
     /* restructure the doubly-linked list */
@@ -271,7 +269,7 @@ int q_descend(struct list_head *head)
     // https://leetcode.com/problems/remove-nodes-from-linked-list/
     if (!head || list_empty(head))
         return 0;
-    // traverse linked list in the direction of prev
+    /* traverse linked list in the direction of prev */
     struct list_head *curr = head->prev, *next = curr->prev;
     while (next != head) {
         element_t *curr_entry = list_entry(curr, element_t, list);
