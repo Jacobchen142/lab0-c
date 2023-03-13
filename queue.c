@@ -214,41 +214,46 @@ void restructure_list(struct list_head *head)
 }
 
 /*Merge two sorted list in asceding order*/
-static struct list_head *mergelist(struct list_head *list1,
-                                   struct list_head *list2)
+static struct list_head *merge_list(struct list_head *L1, struct list_head *L2)
 {
-    struct list_head *res = NULL;
-    struct list_head **indirect = &res;
-    for (struct list_head **node = NULL; list1 && list2;
-         *node = (*node)->next) {
-        element_t *list1_entry = list_entry(list1, element_t, list);
-        element_t *list2_entry = list_entry(list2, element_t, list);
-        node = strcmp(list1_entry->value, list2_entry->value) < 0 ? &list1
-                                                                  : &list2;
-        *indirect = *node;
-        indirect = &(*indirect)->next;
+    /*L1, L2 are the first node of two lists respectively*/
+    struct list_head head, *ptr = &head;
+    INIT_LIST_HEAD(&head);
+    while (L1 && L2) {
+        element_t *L1_entry = list_entry(L1, element_t, list);
+        element_t *L2_entry = list_entry(L2, element_t, list);
+        bool ascend = strcmp(L1_entry->value, L2_entry->value) <= 0;
+        if (ascend) {
+            ptr->next = L1;
+            L1 = L1->next;
+        } else {
+            ptr->next = L2;
+            L2 = L2->next;
+        }
+        ptr = ptr->next;
     }
-    *indirect = (struct list_head *) ((size_t) list1 | (size_t) list2);
-    return res;
+    ptr->next = L1 ? L1 : L2;
+    return head.next;
 }
 
-static struct list_head *mergesort(struct list_head *head)
+static struct list_head *merge_sort(struct list_head *node)
 {
-    if (!head || !head->next)
-        return head;
-
-    struct list_head *fast = head, *slow = head;
+    /* node represent the first node of the list */
+    if (!node || !node->next)
+        return node;
+    /* find the middle node of the list */
+    struct list_head *fast = node, *slow = node;
     while (fast && fast->next) {
         fast = fast->next->next;
         slow = slow->next;
     }
 
     struct list_head *mid = slow;
-    slow->prev->next = NULL;
+    mid->prev->next = NULL; /* split */
 
-    struct list_head *left = mergesort(head);
-    struct list_head *right = mergesort(mid);
-    return mergelist(left, right);
+    struct list_head *left = merge_sort(node);
+    struct list_head *right = merge_sort(mid);
+    return merge_list(left, right);
 }
 /* Sort elements of queue in ascending order */
 void q_sort(struct list_head *head)
@@ -257,7 +262,7 @@ void q_sort(struct list_head *head)
         return;
     /* change circular doubly-linked list to singular linked list */
     head->prev->next = NULL;
-    head->next = mergesort(head->next);
+    head->next = merge_sort(head->next);
     /* restructure the doubly-linked list */
     restructure_list(head);
 }
